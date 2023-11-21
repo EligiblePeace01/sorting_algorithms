@@ -1,124 +1,131 @@
 #include "deck.h"
-
-#include <stdio.h>
-void sort_suit(deck_node_t **deck);
-void sort_val(deck_node_t **deck);
-void swap(deck_node_t **deck, deck_node_t *card1, deck_node_t *card2);
-int vcmp(const card_t *card1, const card_t *card2);
 /**
- * sort_deck - sorts a 52 card deck
- * @deck: deck to sort
+ * aux_num_fun - turn into integer card value
+ * @head_tmp1: pointer to the list
+ * Return: integer rep
+ **/
+int aux_num_fun(deck_node_t *head_tmp1)
+{
+	int aux_num, j;
+	int num[13] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+	char val[13] = {'A', '2', '3', '4', '5', '6', '7',
+		'8', '9', '1', 'J', 'Q', 'K'};
+
+	for (j = 0; j < 13; j++)
+	{
+		if (head_tmp1->card->value[0] == val[j])
+			aux_num = num[j];
+	}
+
+	return (aux_num);
+}
+/**
+ * num_sort - sorts a doubly linked list of integers, 4 stages
+ * @list: pointer to the list head
+ * Return: no return
+ **/
+void num_sort(deck_node_t **list)
+{
+	deck_node_t *head_tmp1, *head_tmp2, *aux1, *aux2;
+	int flag = 0, i, aux_num1, aux_num2;
+	unsigned int k;
+
+	head_tmp1 = *list;
+	head_tmp2 = *list;
+	for (i = 0; i < 4; i++)
+	{ k =  head_tmp1->card->kind;
+		while (head_tmp1->next && head_tmp1->next->card->kind == k)
+		{
+			aux_num1 = aux_num_fun(head_tmp1);
+			aux_num2 = aux_num_fun(head_tmp1->next);
+			flag = 0;
+			head_tmp2 = head_tmp1;
+			while (head_tmp2 && head_tmp2->card->kind == k && aux_num1 > aux_num2)
+			{
+				aux1 = head_tmp2;
+				aux2 = head_tmp2->next;
+				aux1->next = aux2->next;
+				if (aux2->next)
+					aux2->next->prev = aux1;
+				aux2->prev = aux1->prev;
+				aux2->next = aux1;
+				aux1->prev = aux2;
+				if (aux2->prev)
+					aux2->prev->next = aux2;
+				head_tmp2 = aux2->prev;
+				if (!aux2->prev)
+					*list = aux2;
+				flag = 1;
+				if (!head_tmp2)
+					break;
+				aux_num1 = aux_num_fun(head_tmp2);
+				aux_num2 = aux_num_fun(head_tmp2->next);
+			}
+			if (flag == 0)
+				head_tmp1 = head_tmp1->next;
+		}
+		head_tmp1 = head_tmp1->next;
+	}
+}
+/**
+ * kind_sort - sorts a doubly linked list of integers
+ * in ascending order using the Insertion sort ailgorithm
+ * @list: pointer to the list head
+ * Return: no return
+ **/
+void kind_sort(deck_node_t **list)
+{
+	deck_node_t *head_tmp1, *head_tmp2, *aux1, *aux2;
+	int flag;
+
+	if (list)
+	{
+		head_tmp1 = *list;
+		head_tmp2 = *list;
+		while (list && head_tmp1->next)
+		{
+			if (head_tmp1->next)
+			{
+				flag = 0;
+				head_tmp2 = head_tmp1;
+				while (head_tmp2 && head_tmp2->card->kind > head_tmp2->next->card->kind)
+				{
+					aux1 = head_tmp2;
+					aux2 = head_tmp2->next;
+					aux1->next = aux2->next;
+					if (aux2->next)
+						aux2->next->prev = aux1;
+					if (aux2)
+					{
+						aux2->prev = aux1->prev;
+						aux2->next = aux1;
+					}
+					if (aux1)
+						aux1->prev = aux2;
+					if (aux2->prev)
+						aux2->prev->next = aux2;
+					head_tmp2 = aux2->prev;
+					if (!aux2->prev)
+						*list = aux2;
+					flag = 1;
+				}
+			}
+			if (flag == 0)
+				head_tmp1 = head_tmp1->next;
+		}
+	}
+}
+/**
+ * sort_deck - sorts a deck of cards
+ * @deck: ponter to the deck
+ * Return: no return
  *
- * Return: Always 0 (ok)
- */
+ **/
 void sort_deck(deck_node_t **deck)
 {
-if (deck == NULL || *deck == NULL)
-return;
-sort_suit(deck);
-sort_val(deck);
-}
-
-/**
- * sort_suit - sorts a 52 card deck by suit
- * @deck: deck to sort
- */
-void sort_suit(deck_node_t **deck)
-{
-deck_node_t *forw, *tmp;
-
-for (forw = (*deck)->next; forw && forw->prev; forw = forw->next)
-{
-for (; forw && forw->prev && forw->card->kind <
-forw->prev->card->kind; forw = forw->prev)
-{
-tmp = forw->prev;
-swap(deck, tmp, forw);
-forw = forw->next;
-}
-}
-}
-
-/**
- * sort_val - sorts a 52 card deck staticly by value
- * @deck: deck to sort
- */
-void sort_val(deck_node_t **deck)
-{
-deck_node_t *f, *tmp;
-
-for (f = (*deck)->next; f && f->prev; f = f->next)
-{
-for (; f && f->prev && vcmp(f->card, f->prev->card) &&
-f->card->kind == f->prev->card->kind;
-f = f->prev)
-{
-tmp = f->prev;
-swap(deck, tmp, f);
-f = f->next;
-}
-}
-}
-/**
- * swap - swaps 2 consecutive cards of a doubly linked list
- * Used in the insertion algorithm
- * @deck: Head node for the deck
- * @card1: The first card to swap
- * @card2: The second card to swap
- */
-void swap(deck_node_t **deck, deck_node_t *card1, deck_node_t *card2)
-{
-deck_node_t *prev, *next;
-
-prev = card1->prev;
-next = card2->next;
-
-if (prev != NULL)
-prev->next = card2;
-else
-*deck = card2;
-card1->prev = card2;
-card1->next = next;
-card2->prev = prev;
-card2->next = card1;
-if (next)
-next->prev = card1;
-}
-
-/**
- * vcmp - compares 2 card values
- * @card1: The first card to compare
- * @card2: The second card to compare
- *
- * Return: 1 if less than, 0 if greater or equal to
- */
-int vcmp(const card_t *card1, const card_t *card2)
-{
-char char1 = card1->value[0], char2 = card2->value[0];
-const char *ord[14] = {"Ac", "1", "2", "3", "4", "5", "6",
-			 "7", "8", "9", "10", "Ja", "Qu", "Ki"};
-int idx1 = 0, idx2 = 0, i;
-
-if ((char1 >= 48 && char1 <= 57) && (char2 >= 49 &&
-				       char2 <= 57))
-{
-if (card1->value[1] == '0')
-char1 = 58;
-if (card2->value[1] == '0')
-char2 = 58;
-return (char1 < char2);
-}
-else
-{
-for (i = 0; i < 14; i++)
-{
-if (card1->value[0] == ord[i][0] &&
-card1->value[1] == ord[i][1])
-idx1 = i;
-if (card2->value[0] == ord[i][0] &&
-card2->value[1] == ord[i][1])
-idx2 = i;
-}
-return (idx1 < idx2);
-}
+	if (deck)
+	{
+		kind_sort(deck);
+		num_sort(deck);
+	}
 }
